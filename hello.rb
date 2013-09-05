@@ -3,6 +3,7 @@ require 'sinatra'
 
 configure do
   file = File.new("requests.log", 'a+')
+  file.sync = true
   use Rack::CommonLogger, file
 end
 
