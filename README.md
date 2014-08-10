@@ -17,8 +17,8 @@ Monit is used to launch/restart thin by checking tmp/pids/thin.pid
 
 ### request log parsing
 scripts/parse_request_log.rb runs every 5 minutes as a cronjob.
-A basic CSV is created and appended to in tmp/error_codes.csv in the format 
-```period_start_time,period_end_time,http_error_code,period_occurances```.
+A basic CSV is created and appended to in tmp/error_codes.csv in the format ```period_start_time,period_end_time,http_error_code,period_occurances```
+
 The time format is ```%Y%m%dT%H%M```
 
 Requirements
