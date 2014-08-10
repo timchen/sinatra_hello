@@ -1,0 +1,5 @@
+check process thin-sinatra_hello
+    with pidfile /vagrant/tmp/pids/thin.pid
+    start program = "/bin/su - vagrant -c 'cd /vagrant && thin start -d'"
+    stop program  = "/bin/su - vagrant -c 'cd /vagrant && thin stop -P /vagrant/tmp/pids/thin.pid'"
+    if failed port 3000 then restart

@@ -1,0 +1,75 @@
+---
+
+- hosts: 127.0.0.1
+  tasks:
+    - name: install pre-requisite packages
+      apt: pkg={{item}} state=present
+      sudo: yes
+      with_items:
+        - build-essential
+        - git
+          # dependencies for compiling ruby
+        - gawk
+        - libreadline6
+        - libreadline6-dev
+        - libyaml-dev
+        - sqlite
+        - libsqlite3-dev
+        - libxml2-dev
+        - libxslt1-dev
+        - libgdbm-dev
+        - libtool
+        - bison
+        - pkg-config
+        - libffi-dev
+          # to start/stop the thin server
+        - monit
+
+    - name: clone rbenv from github
+      shell: git clone https://github.com/sstephenson/rbenv.git ~/.rbenv creates=~/.rbenv
+
+    - name: add rbenv to shell path
+      lineinfile: dest=~/.bashrc line='export PATH=''"$HOME/.rbenv/bin:$PATH"''' state=present regexp='rbenv/bin:.PATH'
+
+    - name: add rbenv init to bashrc
+      lineinfile: dest=~/.bashrc line='eval "$(rbenv init -)"' state=present regexp='eval ".\(rbenv init -\)"'
+
+    - name: comment out line which prevents loading bashrc when we don't have a login shell
+      lineinfile: dest=~/.bashrc regexp='[ -z "$PS1" ] && return' line='# [ -z "$PS1" ] && return' state=present
+
+    - name: install ruby-build as a plugin
+      shell: git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build creates=~/.rbenv/plugins/ruby-build
+
+    - name: install ruby
+      shell: source ~/.bashrc && rbenv install -f {{ruby_version}} creates=~/.rbenv/versions/{{ruby_version}}/bin/ruby executable=/bin/bash
+      notify: rbenv rehash
+
+    - name: install bundler
+      shell: source ~/.bashrc && gem install bundler --no-ri --no-rdoc creates=~/.rbenv/versions/{{ruby_version}}/bin/bundle executable=/bin/bash
+      notify: rbenv rehash
+
+    - name: bundle install
+      shell: source ~/.bashrc && bundle install executable=/bin/bash
+      notify: rbenv rehash
+
+    - name: install thin starutp config for monit
+      template: src=files/monit-thin dest=/etc/monit/conf.d/thin owner=root group=root
+      sudo: yes
+      notify: restart monit
+
+    - name: request log parser cronjob
+      cron: name='request log parser' user=vagrant minute=*/5 job='/bin/bash -l -c "cd /vagrant && ruby scripts/parse_request_log.rb"'
+
+  handlers:
+    - name: rbenv rehash
+      shell: source ~/.bashrc rbenv rehash executable=/bin/bash
+
+  # - name: restart monit
+  #service: name=monit state=restarted
+
+    #force restart monit to hackily deal the service definition not working for some reason
+    - name: restart monit
+      shell: /etc/init.d/monit restart
+      sudo: yes
+
+

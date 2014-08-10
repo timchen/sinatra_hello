@@ -1,1 +1,5 @@
 requests.log
+.vagrant
+tmp/
+log/
+*.swp
